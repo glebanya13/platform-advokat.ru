@@ -20,8 +20,11 @@ app = FastAPI(title="PlatformAdvokat Gemini API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=[
+        "http://platformadvokat.ru",
+        "https://platformadvokat.ru",
+    ],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
