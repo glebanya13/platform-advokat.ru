@@ -1,4 +1,3 @@
-"""HTTP API для веб-версии: Gemini + генерация PDF."""
 import os
 import uuid
 from datetime import datetime
@@ -10,14 +9,9 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from config import config
-from data.legal_addresses import get_legal_info
 from services import ai_service
 from services.pdf_service import generate_complaint_pdf
 
-# GEMINI_API_KEY проверяется при первом вызове генерации (см. generate_complaint)
-
-# Коды платформ с сайта → ключи в legal_addresses
 PLATFORM_TO_LEGAL_NAME = {
     "yandex": "Яндекс Go",
     "wb": "Wildberries",
@@ -28,7 +22,6 @@ PLATFORM_TO_LEGAL_NAME = {
 
 app = FastAPI(title="Платформенный Адвокат — Web API")
 
-# Корень проекта (где лежит web_api.py)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SITE_DIR = os.path.join(BASE_DIR, "site")
 
@@ -72,7 +65,7 @@ def _platform_legal_name(code: str) -> str:
 @app.post("/api/generate-complaint", response_model=GenerateResponse)
 async def generate_complaint(body: GenerateRequest):
     """Генерация текста претензии через Gemini."""
-    if not getattr(config, "GEMINI_API_KEY", None) or not config.GEMINI_API_KEY:
+    if not (os.getenv("GEMINI_API_KEY") or "").strip():
         raise HTTPException(
             status_code=503,
             detail="Сервис не настроен: укажите GEMINI_API_KEY в переменных окружения",
@@ -125,7 +118,6 @@ async def generate_pdf(body: PdfRequest):
         raise HTTPException(status_code=500, detail=f"Ошибка создания PDF: {e}")
 
 
-# Тестовый PDF без Gemini — проверить генерацию и скачивание
 TEST_LEGAL_TEXT = """
 Я, Тестовый Пользователь, являюсь исполнителем на цифровой платформе Яндекс Go (ID аккаунта: web-test).
 
@@ -165,5 +157,4 @@ def index():
     return FileResponse(os.path.join(SITE_DIR, "index.html"))
 
 
-# Статика в конце: /terms.html, /privacy.html и т.д. (API-маршруты уже зарегистрированы выше)
 app.mount("/", StaticFiles(directory=SITE_DIR, html=True), name="site")
