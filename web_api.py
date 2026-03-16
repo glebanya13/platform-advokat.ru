@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional
 
 import google.generativeai as genai
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -47,6 +47,20 @@ class GenerateResponse(BaseModel):
 
 def _platform_legal_name(code: str) -> str:
     return PLATFORM_TO_LEGAL_NAME.get(code, "Другое")
+
+
+@app.options("/api/generate-complaint")
+def options_generate_complaint() -> Response:
+    """Явно отвечаем на preflight CORS для сайта."""
+    return Response(
+        status_code=204,
+        headers={
+            "Access-Control-Allow-Origin": "http://platformadvokat.ru",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization",
+            "Access-Control-Max-Age": "86400",
+        },
+    )
 
 
 def _build_prompt(body: GenerateRequest) -> str:
